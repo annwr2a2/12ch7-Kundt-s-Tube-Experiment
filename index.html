@@ -419,8 +419,9 @@
         waveGeometry1.setAttribute('position', new THREE.BufferAttribute(wavePositions1, 3));
         waveGeometry2.setAttribute('position', new THREE.BufferAttribute(wavePositions2, 3));
 
-        const waveMaterial1 = new THREE.LineBasicMaterial({ color: 0x3b82f6, linewidth: 8 }); 
-        const waveMaterial2 = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 8 }); 
+        // تقليل سماكة خط الموجة المستقرة إلى 3 لجعلها أنعم وأدق بصرياً
+        const waveMaterial1 = new THREE.LineBasicMaterial({ color: 0x3b82f6, linewidth: 3 }); 
+        const waveMaterial2 = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 3 }); 
 
         const waveLine1 = new THREE.Line(waveGeometry1, waveMaterial1);
         const waveLine2 = new THREE.Line(waveGeometry2, waveMaterial2);
