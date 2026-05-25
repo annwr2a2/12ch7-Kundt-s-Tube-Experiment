@@ -149,7 +149,8 @@
             transform: translateX(20px);
         }
 
-        .audio-btn-container {
+        /* تنسيق زر التحكم الشامل */
+        .action-btn-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -157,26 +158,34 @@
             padding: 6px 10px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
+            grid-column: span 1;
         }
 
-        .audio-btn {
-            background-color: #0284c7;
+        .action-btn {
             color: white;
             border: none;
-            padding: 4px 10px;
+            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
-            transition: background 0.2s;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.1s;
+            width: 100%;
+            justify-content: center;
         }
-
-        .audio-btn:hover {
-            background-color: #0369a1;
+        
+        .action-btn:active {
+            transform: scale(0.96);
         }
+        
+        .btn-green { background-color: #16a34a; }
+        .btn-green:hover { background-color: #15803d; }
+        
+        .btn-red { background-color: #dc2626; }
+        .btn-red:hover { background-color: #b91c1c; }
 
         #data-panel {
             background: rgba(15, 23, 42, 0.05);
@@ -229,7 +238,7 @@
             position: relative;
         }
 
-        /* شاشات الكمبيوتر واللاب توب (Desktop / Large Screens) */
+        /* شاشات الكمبيوتر واللاب توب */
         @media (min-width: 769px) {
             body {
                 flex-direction: row;
@@ -258,7 +267,7 @@
                 font-size: 1.1rem;
                 padding-bottom: 10px;
             }
-            .switch-group, .audio-btn-container {
+            .switch-group, .action-btn-container {
                 padding: 10px;
             }
             #data-panel {
@@ -292,24 +301,15 @@
     <div id="control-panel">
         <h2>تحديد طول موجة الصوت وسرعته</h2>
         
-        <div class="audio-btn-container">
-            <span style="font-weight: 500; font-size: 0.85rem; color: #475569;">صوت السماعة:</span>
-            <button id="audio-toggle-btn" class="audio-btn">
-                <span id="audio-icon">🔇</span> <span id="audio-text">تشغيل الصوت</span>
+        <div class="action-btn-container" style="grid-column: 1 / -1; background: transparent; border: none; padding: 0;">
+            <button id="master-toggle-btn" class="action-btn btn-green">
+                <span id="master-icon">⏸️</span> <span id="master-text">إيقاف المحاكاة والصوت</span>
             </button>
         </div>
 
         <div class="control-group">
             <label>التردد (f): <span id="freq-val" class="value-display">500</span> هرتز</label>
             <input type="range" id="freq-slider" min="250" max="900" step="10" value="500">
-        </div>
-
-        <div class="switch-group">
-            <label for="vibration-toggle" style="cursor: pointer; font-weight: 500; font-size: 0.85rem;">تشغيل الاهتزاز</label>
-            <label class="switch">
-                <input type="checkbox" id="vibration-toggle" checked>
-                <span class="slider"></span>
-            </label>
         </div>
 
         <div class="switch-group">
@@ -419,7 +419,6 @@
         waveGeometry1.setAttribute('position', new THREE.BufferAttribute(wavePositions1, 3));
         waveGeometry2.setAttribute('position', new THREE.BufferAttribute(wavePositions2, 3));
 
-        // تقليل سماكة خط الموجة المستقرة إلى 3 لجعلها أنعم وأدق بصرياً
         const waveMaterial1 = new THREE.LineBasicMaterial({ color: 0x3b82f6, linewidth: 3 }); 
         const waveMaterial2 = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 3 }); 
 
@@ -505,19 +504,19 @@
         const nodeDistVal = document.getElementById('node-dist-val');
         const waveToggle = document.getElementById('wave-toggle');
         const arrowToggle = document.getElementById('arrow-toggle');
-        const vibrationToggle = document.getElementById('vibration-toggle');
 
-        const audioToggleBtn = document.getElementById('audio-toggle-btn');
-        const audioIcon = document.getElementById('audio-icon');
-        const audioText = document.getElementById('audio-text');
+        // الزر الرئيسي المشترك
+        const masterToggleBtn = document.getElementById('master-toggle-btn');
+        const masterIcon = document.getElementById('master-icon');
+        const masterText = document.getElementById('master-text');
 
         let frequency = parseFloat(freqSlider.value);
         let time = 0;
+        let isActive = true; // النظام يعمل بالكامل افتراضياً (صوت + اهتزاز)
 
         let audioCtx = null;
         let oscillator = null;
         let gainNode = null;
-        let isAudioPlaying = false;
 
         function initAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -533,19 +532,28 @@
             oscillator.start();
         }
 
-        audioToggleBtn.addEventListener('click', () => {
-            if (!isAudioPlaying) {
+        // تحكم ذكي وموحد للصوت والفيزياء بضغطة زر واحدة
+        masterToggleBtn.addEventListener('click', () => {
+            isActive = !isActive;
+            
+            if (isActive) {
+                // تشغيل كل شيء (الاهتزاز + الصوت)
+                masterToggleBtn.className = "action-btn btn-green";
+                masterIcon.innerText = "⏸️";
+                masterText.innerText = "إيقاف المحاكاة والصوت";
+                
                 if (!audioCtx) initAudio();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
-                gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.05); 
-                audioIcon.innerText = "🔊";
-                audioText.innerText = "كتم الصوت";
-                isAudioPlaying = true;
+                gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.03);
             } else {
-                gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05); 
-                audioIcon.innerText = "🔇";
-                audioText.innerText = "تشغيل الصوت";
-                isAudioPlaying = false;
+                // كتم وإيقاف كل شيء فورا
+                masterToggleBtn.className = "action-btn btn-red";
+                masterIcon.innerText = "▶️";
+                masterText.innerText = "تشغيل المحاكاة والصوت";
+                
+                if (gainNode) {
+                    gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+                }
             }
         });
 
@@ -573,17 +581,24 @@
         waveToggle.addEventListener('change', (e) => { waveLine1.visible = e.target.checked; waveLine2.visible = e.target.checked; });
         arrowToggle.addEventListener('change', (e) => { arrowGroup.visible = e.target.checked; });
 
+        // بدء الصوت تلقائياً بمجرد أول تفاعل للمستخدم مع الصفحة توافقاً مع حماية المتصفحات
+        window.addEventListener('click', () => {
+            if (isActive && !audioCtx) {
+                initAudio();
+            }
+        }, { once: true });
+
         updatePhysicsValues();
 
         function animate() {
             requestAnimationFrame(animate);
             
-            const isVibrating = vibrationToggle.checked;
-            if (isVibrating) {
+            if (isActive) {
                 time += (frequency / 500) * 0.15; 
             }
 
-            speakerGroup.position.x = (-tubeLength / 2 - 0.4) + (isVibrating ? Math.sin(time * 4) * 0.08 : 0);
+            // السماعة تهتز فقط إذا كان الوضع نشطاً (isActive == true)
+            speakerGroup.position.x = (-tubeLength / 2 - 0.4) + (isActive ? Math.sin(time * 4) * 0.08 : 0);
 
             const lambda = speed / frequency;
             const k = (2 * Math.PI) / lambda; 
@@ -594,7 +609,7 @@
                 for (let i = 0; i < wavePointsCount; i++) {
                     let x = (i / wavePointsCount - 0.5) * tubeLength;
                     let distanceFromClosedEnd = (tubeLength / 2) - x;
-                    let amp = Math.sin(k * distanceFromClosedEnd) * (tubeRadius * 0.8) * (isVibrating ? Math.sin(time * 2) : 1);
+                    let amp = Math.sin(k * distanceFromClosedEnd) * (tubeRadius * 0.8) * (isActive ? Math.sin(time * 2) : 1);
 
                     p1[i * 3] = x; p1[i * 3 + 1] = amp; p1[i * 3 + 2] = 0;   
                     p2[i * 3] = x; p2[i * 3 + 1] = -amp; p2[i * 3 + 2] = 0;
@@ -614,7 +629,7 @@
                 shaft.scale.set(1, arrowWidth, 1); 
                 
                 leftCone.position.x = -arrowWidth / 2;
-                rightCone.position.x = arrowWidth / 2;
+                rightCone.position.x = borderX = arrowWidth / 2;
 
                 lambdaMesh.quaternion.copy(camera.quaternion);
             }
@@ -627,7 +642,7 @@
                 let distanceFromClosedEnd = (tubeLength / 2) - x;
                 let waveSin = Math.sin(k * distanceFromClosedEnd); 
 
-                if (isVibrating) {
+                if (isActive) {
                     let force = Math.sin(2 * k * distanceFromClosedEnd) * 0.007;
                     x += force; 
 
@@ -654,8 +669,7 @@
                 let finalY = r * Math.sin(angle);
                 let finalZ = r * Math.cos(angle);
 
-                dummy.position.set(x, finalY, finalZ);
-                dummy.updateMatrix();
+                dummy.position.set(x, finalY, finalZ); dummy.updateMatrix();
                 particleSystem.setMatrixAt(i, dummy.matrix);
             }
 
